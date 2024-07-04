@@ -1,0 +1,17 @@
+FROM alpine:3.20 AS builder
+
+RUN apk --no-cache add \
+    g++ \
+    git \
+    make \
+    zlib-dev
+
+RUN git clone https://github.com/haghshenas/fastutils.git /tmp/fastutils \
+    && cd /tmp/fastutils \
+    && make
+
+FROM alpine:3.20
+RUN apk --no-cache add libgcc libstdc++
+COPY --from=builder /tmp/fastutils /usr/local/bin/
+WORKDIR /app
+CMD ["/usr/local/bin/fastutils"]
