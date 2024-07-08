@@ -9,6 +9,7 @@ docker
   kill       # Kill one or more running containers
   exec       # Execute a command in a running container
   pull       # Download an image from a registry
+  push       # Upload an image to a registry
   image      # Operations with images
   cp         # Copy files/folders between a container and the local filesystem
   logs       # Fetch the logs of a container
@@ -250,7 +251,9 @@ Many popular containers use environment variables to configure their behaviour.
 
 ### Commands and Entrypoints
 
-There are two ways of defining which command runs by default in a container: `COMMAND` and `ENTRYPOINT`. As we have seen earlier, to override the default command, one only needs to specify a new one at the end of the line. However, if the container defines `ENTRYPOINT`, the command parameter is instead appened to the one specified as entrypoint. To override this, one can use the `--entrypoint` option:
+There are two ways of defining which command runs by default in a container: `COMMAND` and `ENTRYPOINT`. As we have seen earlier, to override the default command, one only needs to specify a new one at the end of the line. However, if the container defines `ENTRYPOINT`, the command parameter is instead appened to the one specified as entrypoint. To override this, one can use the `--entrypoint` option.
+
+To explore this behaviour we'll use a custom container previously uploaded to Docker Hub (see `Dockerfile` in folder "entrypoint-example"):
 
 ```
 docker run --rm -it luisico/hostname                      # default entrypoint  --> "hostname"
@@ -260,6 +263,8 @@ docker run --rm -it --entrypoint sh luisico/hostname      # change entrypoint   
 ```
 
 Note that most modern containers implement a "smart" entrypoint that will execute arbitrary commands if the one passed does not follow a useful pattern.
+
+(see directory `entrypoint-example`)
 
 ### Permissions
 
@@ -316,6 +321,8 @@ docker image
   build     # Build an image from a Dockerfile definition (or `docker build`)
   inspect   # Inspect build and properties of an image (or `docker inspect`)
   history   # Show the build history of an image
+  save      # Export and image as a tar archive
+  load      # Import a tarball as an image
 ```
 
 - Naming: `registry/org/name:tag`
@@ -391,6 +398,25 @@ curl -L https://doc-deptconservation.opendata.arcgis.com/api/download/v1/items/c
 docker run --rm -it -v ./:/app campsites:1.0.0
 ```
 
+#### Sharing an image
+
+The easiest and best practice is to push (upload) images to a registry (Docker Hub is the default), where others can find it:
+```
+docker login
+docker tag campites:1.0.0 org/campsites:1.0.0
+docker push org/campsites:1.0.0
+```
+
+An alternative is to manually save the image into a tar file:
+```
+docker image save campsites:1.0.0 -o campsites-v1.0.0.tar
+```
+
+After transferring the tar file to the new host, we can load it as an image:
+```
+docker image load -I campsites-v1.0.0.tar
+```
+
 #### Fastutils
 
 [Fastutils](https://github.com/haghshenas/fastutils) is a light toolkit for parsing, manipulating and analysis of FASTA and FASTQ files.
@@ -451,4 +477,41 @@ Display ethanol from SMILES format:
 docker run --rm openbabel -':CCO' -o ascii
 docker run --rm openbabel -':CCO' -o ascii -h
 docker run --rm openbabel -':CCO' -o png -h -xa > ethanol.png
+```
+
+## Coordinating containers
+
+- `docker-compose.yml`: Declarative instructions on how multiple services (apps) are configured and orchestrated. See reference documentation at https://docs.docker.com/compose/compose-file/
+- `docker compose`: Command to manage all services
+
+```
+docker compose
+  up        # Create and start services
+  down      # Stop and remove services
+  ps        # List containers
+  exec      # Execute command in container
+  pull      # Pull (download) images
+  logs      # View output from containers
+  build     # Build images
+```
+
+### Example with RStudio
+
+```
+cd rstudio
+cat docker-compose.yml
+env PASSWORD=secret docker compose up -d
+docker compose ps
+```
+
+You can access RStudio from your browser at http://localhost:8787
+
+### Example with multiple services (Paperless-ngx)
+
+[Paperless-ngx](https://docs.paperless-ngx.com) is document management system with support to scan document and make all content searchable.
+
+```
+cd paperless-ngx
+cat docker-compose.yml
+docker compose up -d
 ```
