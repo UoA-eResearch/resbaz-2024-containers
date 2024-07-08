@@ -1,0 +1,12 @@
+services:
+  rstudio:
+    # image: rocker/verse:4.4
+    image: my-rstudio
+    build: .
+    restart: unless-stopped
+    environment:
+      PASSWORD:
+    ports:
+      - '8787:8787'
+    volumes:
+      - .:/home/rstudio
